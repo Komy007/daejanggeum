@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #080706;
+  --foreground: #e5e5e0;
+  --card: #12110f;
+  --card-foreground: #e5e5e0;
+  --primary: #d4af37;
+  --primary-foreground: #080706;
+  --secondary: #1c1b18;
+  --secondary-foreground: #e5e5e0;
+  --accent: #cd7f32;
+  --accent-foreground: #f4f1de;
+  --border: #2a2824;
+  --input: #2a2824;
+  --ring: #d4af37;
+  --platinum: #e5e4e2;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-platinum: var(--platinum);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  .glass-dark {
+    @apply bg-black/80 backdrop-blur-2xl border border-primary/20;
+  }
+
+  .gold-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-[#d4af37] via-[#f4c430] to-[#b8860b];
+  }
+
+  .platinum-text {
+    @apply text-platinum;
+  }
+
+  .gold-gradient {
+    background: linear-gradient(135deg, #d4af37 0%, #f4c430 50%, #b8860b 100%);
+  }
+
+  .animate-slow-fade {
+    animation: fade-in 1.5s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

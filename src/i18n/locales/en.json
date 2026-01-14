@@ -1,0 +1,35 @@
+{
+    "common": {
+        "welcome": "Welcome",
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "offline": "Current offline mode. Please call a staff member."
+    },
+    "order_status": {
+        "title": "Digital Menu",
+        "add_to_cart": "Add to Cart",
+        "request_payment": "Request Bill",
+        "staff_call": "Staff Call",
+        "cancel_call": "Cancel Call",
+        "remove": "Remove",
+        "empty_cart": "Empty Cart",
+        "cannot_cancel": "Cannot cancel after order (Contact Staff)",
+        "your_order": "Your Order",
+        "total_bill": "Total Bill",
+        "order_and_send": "Place Order",
+        "cooking": "Cooking",
+        "sent_success": "Your order has been sent to the kitchen."
+    },
+    "order": {
+        "title": "Smart Order",
+        "cart": "Cart",
+        "request_payment": "Request Payment",
+        "payment_waiting": "Thank you. We are calculating. Please wait a moment, and we will send the bill.",
+        "recommendation": "Recommendations",
+        "pairing": "Pairing Drinks"
+    },
+    "security": {
+        "out_of_range": "You are out of the store range (50m). Ordering is only available inside the store.",
+        "wifi_required": "Please connect to the store Wi-Fi."
+    }
+}

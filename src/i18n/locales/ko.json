@@ -1,0 +1,40 @@
+{
+  "common": {
+    "welcome": "환영합니다",
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다",
+    "offline": "현재 오프라인 모드입니다. 직원을 호출해 주세요."
+  },
+  "order_status": {
+    "title": "디지털 메뉴판",
+    "add_to_cart": "주문 담기",
+    "staff_call": "종업원호출",
+    "cancel_call": "호출 취소",
+    "remove": "삭제",
+    "empty_cart": "장바구니 비우기",
+    "cannot_cancel": "주문 후에는 취소가 불가합니다 (직원에게 문의)",
+    "your_order": "나의 주문 내역",
+    "total_bill": "최종 합계",
+    "order_and_send": "주문하기",
+    "cooking": "조리 중",
+    "sent_success": "주문이 성공적으로 전달되었습니다.",
+    "request_payment": "계산하기",
+    "review_order": "주문 내용 내역확인",
+    "confirm_order": "주문 컨펌",
+    "payment_processing": "카운터에서 계산을 하고 있습니다.",
+    "bill_coming": "계산서가 오는중",
+    "finish_meal_q": "식사는 끝나셨나요? 계산을 도와드릴까요?"
+  },
+  "order": {
+    "title": "스마트 주문",
+    "cart": "장바구니",
+    "request_payment": "결제 요청",
+    "payment_waiting": "감사합니다. 계산 중입니다. 잠시만 기다리시면 계산서를 보내겠습니다.",
+    "recommendation": "추천 메뉴",
+    "pairing": "페어링 음료"
+  },
+  "security": {
+    "out_of_range": "매장 범위(50m)를 벗어났습니다. 매장 내에서만 주문이 가능합니다.",
+    "wifi_required": "매장 Wi-Fi에 연결해 주세요."
+  }
+}

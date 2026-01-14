@@ -1,0 +1,30 @@
+{
+    "common": {
+        "welcome": "Chào mừng quý khách",
+        "loading": "Đang tải...",
+        "error": "Đã có lỗi xảy ra",
+        "offline": "Hiện đang ở chế độ ngoại tuyến. Vui lòng gọi nhân viên."
+    },
+    "order": {
+        "title": "Đặt món thông minh",
+        "cart": "Giỏ hàng",
+        "request_payment": "Yêu cầu thanh toán",
+        "payment_waiting": "Cảm ơn quý khách. Chúng tôi đang tính toán. Vui lòng đợi trong giây lát, chúng tôi sẽ gửi hóa đơn cho quý khách.",
+        "recommendation": "Món ăn gợi ý",
+        "pairing": "Đồ uống gợi ý"
+    },
+    "order_status": {
+        "title": "Thực đơn điện tử",
+        "add_to_cart": "Thêm",
+        "request_payment": "Yêu cầu thanh toán",
+        "staff_call": "Gọi nhân viên",
+        "cancel_call": "Hủy gọi",
+        "remove": "Xóa",
+        "empty_cart": "Xóa giỏ hàng",
+        "cannot_cancel": "Không thể hủy sau khi đặt (Liên hệ nhân viên)"
+    },
+    "security": {
+        "out_of_range": "Bạn đang ở ngoài phạm vi nhà hàng (50m). Chỉ có thể đặt món khi ở trong nhà hàng.",
+        "wifi_required": "Vui lòng kết nối với Wi-Fi của nhà hàng."
+    }
+}

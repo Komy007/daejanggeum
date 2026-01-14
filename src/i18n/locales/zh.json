@@ -1,0 +1,30 @@
+{
+    "common": {
+        "welcome": "欢迎光临",
+        "loading": "加载中...",
+        "error": "发生错误",
+        "offline": "当前处于离线状态。请呼叫服务员。"
+    },
+    "order": {
+        "title": "智能点餐",
+        "cart": "购物车",
+        "request_payment": "请求结账",
+        "payment_waiting": "谢谢。正在计费中，请稍等，我们会为您送上账单。",
+        "recommendation": "推荐菜单",
+        "pairing": "配餐饮料"
+    },
+    "order_status": {
+        "title": "电子菜单",
+        "add_to_cart": "添加",
+        "request_payment": "结账请求",
+        "staff_call": "呼叫服务员",
+        "cancel_call": "取消呼叫",
+        "remove": "删除",
+        "empty_cart": "清空购物车",
+        "cannot_cancel": "下单后无法取消 (请联系员工)"
+    },
+    "security": {
+        "out_of_range": "您超出了店铺范围（50米）。仅限店内点餐。",
+        "wifi_required": "请连接店内Wi-Fi。"
+    }
+}

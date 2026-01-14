@@ -31,6 +31,7 @@ export default function OrderPage() {
         markOrderAsSubmitted,
         isPaying,
         requestPayment,
+        cancelPaymentRequest,
         resetTable
     } = useTableSync(tableId as string);
 
@@ -96,7 +97,7 @@ export default function OrderPage() {
     const handleSubmitOrder = () => {
         markOrderAsSubmitted();
         setShowOrderReviewModal(false);
-        setShowCartDetail(false);
+        setShowCartDetail(false); // 주문 성공 시 장바구니 창을 자동으로 닫습니다.
     };
 
     const handleRequestPayment = () => {
@@ -114,6 +115,44 @@ export default function OrderPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-32">
+            {/* Payment Requesting Overlay */}
+            <AnimatePresence>
+                {isPaying && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-3xl flex flex-col items-center justify-center p-8 overflow-hidden"
+                    >
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center max-w-xs w-full">
+                            <div className="relative mb-12">
+                                <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <DollarSign size={64} className="text-primary" />
+                                </motion.div>
+                            </div>
+                            <h2 className="text-3xl font-black mb-4 gold-gradient-text tracking-tighter uppercase text-center">{t('order_status.bill_coming')}</h2>
+                            <p className="text-platinum/60 text-center mb-12 font-medium break-keep">
+                                카운터에서 계산서를 준비 중입니다.<br />잠시만 기다려 주세요.
+                            </p>
+                            <div className="w-full flex flex-col gap-4">
+                                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div animate={{ x: [-100, 300] }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="w-1/3 h-full bg-primary" />
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        cancelPaymentRequest();
+                                        const { removePosNotification } = require('@/lib/notifications');
+                                        removePosNotification(tableId as string);
+                                    }}
+                                    className="mt-4 px-8 py-3 rounded-full border border-white/10 text-white/40 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all"
+                                >
+                                    추가 주문하기 (요청 취소)
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Header */}
             <header className="relative h-72 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/40 z-10" />
@@ -370,8 +409,9 @@ export default function OrderPage() {
                                                     <button onClick={() => addToCart(item)} className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg active:scale-95">+</button>
                                                 </div>
                                             ) : (
-                                                <div className="px-4 py-2 rounded-[1.2rem] bg-primary/10 border border-primary/20">
+                                                <div className="px-4 py-2 rounded-[1.2rem] bg-primary/10 border border-primary/20 flex flex-col items-center">
                                                     <p className="font-bold text-primary text-[10px]">{item.quantity}개 ({t('order_status.cooking')})</p>
+                                                    <p className="text-[8px] opacity-40 mt-0.5">결제 완료 시 초기화됩니다</p>
                                                 </div>
                                             )}
                                             {!orderSubmitted && (

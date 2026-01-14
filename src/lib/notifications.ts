@@ -42,3 +42,11 @@ export const printBillAtCounter = (tableId: string) => {
     // 실제 환경에서는 여기서 열전사 프린터 API 호출
     return true;
 };
+
+export const removePosNotification = (tableId: string) => {
+    console.log(`[SYSTEM] Removing POS notification for Table: ${tableId}`);
+    const requests: PaymentRequest[] = JSON.parse(localStorage.getItem('payment_requests') || '[]');
+    const filtered = requests.filter(r => r.tableId !== tableId);
+    localStorage.setItem('payment_requests', JSON.stringify(filtered));
+    window.dispatchEvent(new Event('storage'));
+};

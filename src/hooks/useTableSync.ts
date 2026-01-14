@@ -60,6 +60,12 @@ export function useTableSync(tableId: string) {
         window.dispatchEvent(new Event('storage'));
     };
 
+    const cancelPaymentRequest = () => {
+        localStorage.setItem(paymentRequestedKey, 'false');
+        setIsPaying(false);
+        window.dispatchEvent(new Event('storage'));
+    };
+
     const resetTable = () => {
         localStorage.removeItem(cartKey);
         localStorage.removeItem(staffCallKey);
@@ -131,6 +137,7 @@ export function useTableSync(tableId: string) {
         markOrderAsSubmitted,
         isPaying,
         requestPayment,
+        cancelPaymentRequest,
         resetTable
     };
 }

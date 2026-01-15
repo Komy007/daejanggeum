@@ -3,7 +3,8 @@ export const CATEGORIES = [
     { id: 'traditional', nameKO: '전통 요리', nameEN: 'Traditional', nameKM: 'ម្ហូបប្រពៃណី', nameZH: '传统料理', nameJA: '伝統料理', nameVI: 'Món truyền thống' },
     { id: 'signature', nameKO: '시그니처', nameEN: 'Signature', nameKM: 'មុខម្ហូបពិសេស', nameZH: '招牌菜', nameJA: 'シグネチャー', nameVI: 'Món đặc trưng' },
     { id: 'modern', nameKO: '현대적 요리', nameEN: 'Modern', nameKM: 'ម្ហូបសម័យ', nameZH: '现代料理', nameJA: '現代料理', nameVI: 'Món hiện đại' },
-    { id: 'drinks', nameKO: '음료', nameEN: 'Drinks', nameKM: 'ភេសជ្ជៈ', nameZH: '饮品', nameJA: 'お飲み物', nameVI: 'Đồ uống' },
+    { id: 'meat', nameKO: '고기류', nameEN: 'Premium Meat', nameKM: 'សាច់លំដับខ្ពស់', nameZH: '优质肉类', nameJA: 'プレミアム肉', nameVI: 'Thịt cao cấp' },
+    { id: 'drinks', nameKO: '음료', nameEN: 'Drinks', nameKM: 'ភេសជ្ជៈ', nameZH: '饮品', nameJA: 'お飲み물', nameVI: 'Đồ uống' },
 ];
 
 export const MENU_ITEMS = [
@@ -83,6 +84,67 @@ export const MENU_ITEMS = [
         },
         price: 25,
         image: '/images/solsongju.png',
+    },
+    {
+        id: 'meat1',
+        category: 'meat',
+        names: { ko: '꽃등심', en: 'Grilled Beef Sirloin', km: 'សាច់គោឡាំប៊ឺត', zh: '花肉里脊', ja: '霜降りロース', vi: 'Thăn lưng bò hoa' },
+        descriptions: {
+            ko: '화려한 마블링과 풍부한 육즙이 일품인 최상급 한우 꽃등심',
+            en: 'Top-grade Hanwoo beef sirloin with brilliant marbling and rich juices.',
+            km: 'សាច់គោ Hanwoo លំដับខ្ពស់ដែលមានជាតិទឹក និងរសជាតិឆ្ងាញ់។',
+            zh: '具有华丽大理石纹理和丰富肉汁的顶级韩牛花肉里脊。',
+            ja: '華やかなマーブリングと豊かな肉汁が逸品の最上級韓牛霜降りロース。',
+            vi: 'Thăn lưng bò Hanwoo thượng hạng với vân mỡ đẹp mắt và mọng nước.'
+        },
+        price: 30,
+        image: '/images/meat1.png',
+        popular: true,
+    },
+    {
+        id: 'meat2',
+        category: 'meat',
+        names: { ko: '생갈비', en: 'Grilled Unfrozen Beef Ribs', km: 'ឆ្អឹងជំនីគោស្រស់', zh: '鲜牛排', ja: '生カルビ', vi: 'Sườn bò tươi' },
+        descriptions: {
+            ko: '얼리지 않은 신선함 그대로, 고소한 풍미가 살아있는 프리미엄 생갈비',
+            en: 'Premium unfrozen beef ribs with a clean, savory flavor and natural texture.',
+            km: 'ឆ្អឹងជំនីគោស្រស់ លំដับខ្ពស់ ដែលមានរសជាតិឆ្ងាញ់បំផុត។',
+            zh: '保持未冷冻的新鲜感，充满香醇风味的优质鲜牛排。',
+            ja: '凍らせない新鮮さそのまま、香ばしい風味が生きているプレミアム生カルビ。',
+            vi: 'Sườn bò tươi cao cấp không qua đông lạnh, giữ trọn vị ngọt tự nhiên.'
+        },
+        price: 29,
+        image: '/images/meat2.png',
+    },
+    {
+        id: 'meat3',
+        category: 'meat',
+        names: { ko: '갈비살', en: 'Grilled Beef Ribs', km: 'សាច់ជំនីគោ', zh: '牛排肉', ja: 'カルビ肉', vi: 'Thịt sườn bò' },
+        descriptions: {
+            ko: '쫄깃한 식감과 고소한 맛이 어우러진 대장금 인기 부위',
+            en: 'A popular cut at DaeJangGeum featuring a chewy texture and savory taste.',
+            km: 'សាច់ជំនីគោដែលមានរសជាតិឈ្ងុយឆ្ងាញ់ និងពេញនិយមបំផុត។',
+            zh: '嚼劲十足、鲜香可口的大长今人气部位牛排肉。',
+            ja: '弾力のある食感と香ばしい味が調화한 大長今の人気部位カルビ肉。',
+            vi: 'Phần thịt sườn phổ biến tại DaeJangGeum với độ dai giòn và vị ngọt đậm đà.'
+        },
+        price: 28,
+        image: '/images/meat3.png',
+    },
+    {
+        id: 'meat4',
+        category: 'meat',
+        names: { ko: '양념갈비', en: 'Marinated Beef Ribs', km: 'ឆ្អឹងជំនីគោប្រឡាក់', zh: '腌制牛排', ja: '味付けカルビ', vi: 'Sườn bò tẩm gia vị' },
+        descriptions: {
+            ko: '대장금 비법 양념에 재워 달콤하고 짭짤한 풍미가 일품인 양념갈비',
+            en: 'Marinated beef ribs soaked in DaeJangGeum\'s secret sauce for a perfect sweet and savory flavor.',
+            km: 'ឆ្អឹងជំនីគោប្រឡាក់ជាមួយគ្រឿងទេសពិសេសរបស់ DaeJangGeum។',
+            zh: '浸泡在大长今秘制酱汁中，甜咸适中的优质腌制牛排。',
+            ja: '大長今の秘法ソースに浸した、甘辛い風味が逸品の味付けカルビ。',
+            vi: 'Sườn bò tẩm nước sốt bí truyền DaeJangGeum với vị mặn ngọt hài hòa.'
+        },
+        price: 25,
+        image: '/images/meat4.png',
     },
 ];
 

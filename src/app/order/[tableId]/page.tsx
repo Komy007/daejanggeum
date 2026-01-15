@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Utensils, Info, MapPin, Wifi, Star, X, Bell, User, DollarSign } from 'lucide-react';
+import { ShoppingCart, Utensils, Info, MapPin, Wifi, Star, X, Bell, User, DollarSign, Search } from 'lucide-react';
 import { CATEGORIES, MENU_ITEMS, STORE_INFO } from '@/lib/constants';
 import { validateGeofencing } from '@/lib/security';
 import { triggerPosNotification } from '@/lib/notifications';
@@ -21,6 +21,7 @@ export default function OrderPage() {
     const {
         cart,
         updateCart,
+        addToCart,
         decreaseQuantity,
         removeFromCart,
         clearCart,
@@ -43,8 +44,10 @@ export default function OrderPage() {
     const [showOrderReviewModal, setShowOrderReviewModal] = useState(false);
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showPaymentConfirmModal, setShowPaymentConfirmModal] = useState(false);
+    const [showBillModal, setShowBillModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [selectedItemForDetail, setSelectedItemForDetail] = useState<any>(null);
+    const [isImageZoomed, setIsImageZoomed] = useState(false);
 
     const {
         user,
@@ -80,16 +83,6 @@ export default function OrderPage() {
         // return () => clearTimeout(timer);
     }, []);
 
-    const addToCart = (item: any) => {
-        if (orderSubmitted) return;
-        const existing = cart.find(c => c.id === item.id);
-        if (existing) {
-            updateCart(cart.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c));
-        } else {
-            updateCart([...cart, { ...item, quantity: 1 }]);
-        }
-    };
-
     const getItemQuantity = (itemId: string) => {
         return cart.find(c => c.id === itemId)?.quantity || 0;
     };
@@ -101,8 +94,13 @@ export default function OrderPage() {
     };
 
     const handleRequestPayment = () => {
-        requestPayment();
-        triggerPosNotification(tableId as string);
+        const orderItems = cart.map(item => ({
+            id: item.id,
+            name: item.names[i18n.language] || item.names['en'],
+            price: item.price,
+            quantity: item.quantity
+        }));
+        requestPayment(orderItems, cartTotal);
         setShowPaymentConfirmModal(false);
     };
 
@@ -148,6 +146,72 @@ export default function OrderPage() {
                                 >
                                     추가 주문하기 (요청 취소)
                                 </button>
+                                <button
+                                    onClick={() => setShowBillModal(true)}
+                                    className="mt-4 px-8 py-3 rounded-full bg-white/5 border border-white/10 text-platinum text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all font-outfit"
+                                >
+                                    {t('order_status.view_bill') || '청구서 보기'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Bill Receipt Modal */}
+            <AnimatePresence>
+                {showBillModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[210] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+                            className="bg-white text-black w-full max-w-sm rounded-[2rem] p-8 shadow-2xl relative overflow-hidden font-mono"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+                            <button onClick={() => setShowBillModal(false)} className="absolute top-4 right-4 text-black/20 hover:text-black transition-colors">
+                                <X size={24} />
+                            </button>
+
+                            <div className="text-center mb-8 pt-4">
+                                <h2 className="text-xl font-black uppercase tracking-tighter mb-1">DAE JANG GEUM</h2>
+                                <p className="text-[10px] opacity-60">Smart QR Order Receipt</p>
+                                <div className="mt-4 flex justify-between text-[10px] border-y border-black/5 py-2 uppercase">
+                                    <span>TABLE {tableId}</span>
+                                    <span>{new Date().toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[300px] overflow-y-auto space-y-4 mb-8 pr-2">
+                                {cart.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-start text-xs">
+                                        <div className="flex-1 pr-4">
+                                            <p className="font-bold">{item.names[i18n.language] || item.names['en']}</p>
+                                            <p className="opacity-40 text-[9px]">${item.price.toLocaleString()} x {item.quantity}</p>
+                                        </div>
+                                        <p className="font-bold">${(item.price * item.quantity).toLocaleString()}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="border-t-2 border-dashed border-black/10 pt-6 mb-8">
+                                <div className="flex justify-between items-center text-lg font-black">
+                                    <span>TOTAL</span>
+                                    <span className="text-primary">${cartTotal.toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-[10px] opacity-40 mb-6 font-sans italic">Thank you for dining with us!</p>
+                                <button
+                                    onClick={() => {
+                                        if (!isPaying) handleRequestPayment();
+                                        setShowBillModal(false);
+                                    }}
+                                    className="w-full bg-black text-white py-4 rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+                                >
+                                    {isPaying ? 'CLOSE' : 'REQUEST PAYMENT'}
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -164,7 +228,17 @@ export default function OrderPage() {
                 />
                 <div className="absolute inset-0 bg-black/30 z-10" />
                 <div className="relative z-20 h-full flex flex-col justify-start p-4 pt-12">
-                    <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, ease: "easeOut" }}>
+                    <motion.div
+                        initial={{ opacity: 0, x: -40 }}
+                        animate={{
+                            opacity: 1,
+                            x: [0, 10, -10, 10, -10, 0]
+                        }}
+                        transition={{
+                            opacity: { duration: 1 },
+                            x: { duration: 4, times: [0, 0.2, 0.4, 0.6, 0.8, 1], repeat: 0, ease: "easeInOut" }
+                        }}
+                    >
                         <div className="mb-2 relative w-full max-w-[340px]">
                             <img
                                 src="/images/brand/logo.png"
@@ -224,21 +298,21 @@ export default function OrderPage() {
             <div className="px-6 -mt-6 relative z-30 grid grid-cols-4 gap-2">
                 <button
                     onClick={() => staffCalled ? cancelStaffCall() : callStaff()}
-                    className={`py-6 rounded-3xl font-black flex flex-col items-center justify-center transition-all shadow-xl group ${staffCalled ? 'bg-accent text-white ring-4 ring-accent/30' : 'glass border-primary/20 bg-background/40 text-platinum hover:bg-primary/10'
+                    className={`py-6 rounded-3xl font-bold flex flex-col items-center justify-center transition-all shadow-xl group ${staffCalled ? 'bg-accent text-white ring-4 ring-accent/30' : 'bg-black/90 border border-white/10 text-white hover:bg-black'
                         }`}
                 >
-                    <Bell size={20} className={staffCalled ? 'animate-bounce' : 'text-primary group-hover:scale-110 transition-transform'} />
-                    <span className="text-[9px] mt-2 font-black uppercase tracking-tighter">
+                    <Bell size={20} className={staffCalled ? 'animate-bounce text-white' : 'text-white group-hover:scale-110 transition-transform'} />
+                    <span className="text-[10px] mt-2 font-bold uppercase tracking-tighter text-platinum">
                         {staffCalled ? t('order_status.cancel_call') : t('order_status.staff_call')}
                     </span>
                 </button>
 
                 <button
                     disabled
-                    className="glass border-white/5 bg-background/20 py-6 rounded-3xl font-black flex flex-col items-center justify-center text-platinum/20 shadow-xl cursor-not-allowed group"
+                    className="bg-black/40 border border-white/5 py-6 rounded-3xl font-black flex flex-col items-center justify-center text-white/20 shadow-xl cursor-not-allowed group"
                 >
-                    <Info size={20} className="text-platinum/10" />
-                    <span className="text-[9px] mt-2 font-black uppercase tracking-tighter opacity-40">{t('order.recommendation')}</span>
+                    <Info size={20} className="text-white/10" />
+                    <span className="text-[9px] mt-2 font-black uppercase tracking-tighter">{t('order.recommendation')}</span>
                 </button>
 
                 {/* Primary Action Button - Equal Size */}
@@ -249,20 +323,16 @@ export default function OrderPage() {
                         else if (cartCount > 0) setShowOrderReviewModal(true);
                         else alert('장바구니가 비어있습니다.');
                     }}
-                    disabled={(!orderSubmitted && cartCount === 0) || isPaying}
-                    className={`py-6 rounded-3xl font-black flex flex-col items-center justify-center transition-all shadow-2xl relative overflow-hidden group disabled:opacity-50 ${isPaying
-                        ? 'bg-secondary text-platinum/40 cursor-not-allowed'
-                        : 'bg-primary text-primary-foreground shadow-primary/30'
-                        }`}
+                    className="py-6 rounded-3xl font-bold flex flex-col items-center justify-center transition-all shadow-xl relative overflow-hidden group bg-black/90 border border-white/10 text-white hover:bg-black"
                 >
                     {isPaying ? (
-                        <div className="w-5 h-5 border-2 border-platinum/20 border-t-platinum rounded-full animate-spin" />
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     ) : orderSubmitted ? (
-                        <DollarSign size={20} className="group-hover:scale-110 transition-transform" />
+                        <DollarSign size={20} className="text-white group-hover:scale-110 transition-transform" />
                     ) : (
-                        <Utensils size={20} className="group-hover:scale-110 transition-transform" />
+                        <Utensils size={20} className="text-white group-hover:scale-110 transition-transform" />
                     )}
-                    <span className="text-[9px] mt-2 font-black uppercase tracking-tighter">
+                    <span className="text-[10px] mt-2 font-bold uppercase tracking-tighter text-platinum">
                         {isPaying
                             ? t('order_status.bill_coming')
                             : orderSubmitted
@@ -274,17 +344,17 @@ export default function OrderPage() {
 
                 <button
                     onClick={() => setShowCartDetail(true)}
-                    className="glass border-primary/20 bg-background/40 py-6 rounded-3xl font-black flex flex-col items-center justify-center text-platinum shadow-xl hover:bg-primary/10 transition-all group"
+                    className="bg-black/90 border border-white/10 text-white py-6 rounded-3xl font-bold flex flex-col items-center justify-center shadow-xl hover:bg-black transition-all group"
                 >
                     <div className="relative">
-                        <ShoppingCart size={20} className="text-primary group-hover:scale-110 transition-transform" />
+                        <ShoppingCart size={20} className="text-white group-hover:scale-110 transition-transform" />
                         {cartCount > 0 && (
                             <span className="absolute -top-2 -right-2 bg-accent text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                                 {cartCount}
                             </span>
                         )}
                     </div>
-                    <span className="text-[9px] mt-2 font-black uppercase tracking-tighter">{t('order.cart')}</span>
+                    <span className="text-[10px] mt-2 font-bold uppercase tracking-tighter text-platinum">{t('order.cart')}</span>
                 </button>
             </div>
 
@@ -521,8 +591,28 @@ export default function OrderPage() {
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-end sm:justify-center p-0 sm:p-6"
                     >
+                        <AnimatePresence>
+                            {isImageZoomed && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    onClick={() => setIsImageZoomed(false)}
+                                    className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/98 cursor-zoom-out"
+                                >
+                                    <img
+                                        src={selectedItemForDetail.image}
+                                        alt=""
+                                        className="max-w-full max-h-full object-contain shadow-[0_0_150px_rgba(0,0,0,1)] rounded-3xl"
+                                    />
+                                    <button className="absolute top-10 right-10 text-white/40 hover:text-white transition-opacity">
+                                        <X size={50} />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         {/* Desktop: Close button on top right */}
-                        <button onClick={() => setSelectedItemForDetail(null)} className="hidden sm:flex absolute top-10 right-10 text-white opacity-40 hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setSelectedItemForDetail(null); setIsImageZoomed(false); }} className="hidden sm:flex absolute top-10 right-10 text-white opacity-40 hover:opacity-100 transition-opacity">
                             <X size={40} />
                         </button>
 
@@ -530,84 +620,177 @@ export default function OrderPage() {
                             initial={{ y: 100, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 100, opacity: 0 }}
-                            className="bg-card w-full max-w-2xl h-[90vh] sm:h-auto sm:rounded-[4rem] overflow-hidden flex flex-col relative"
+                            className="bg-card w-full max-w-4xl h-[95dvh] md:h-auto md:max-h-[85vh] sm:rounded-[4rem] overflow-hidden flex flex-col md:flex-row relative shadow-[0_0_100px_rgba(0,0,0,0.8)] mx-4 sm:mx-0"
                         >
                             {/* Mobile: Close button on top right of image */}
-                            <button onClick={() => setSelectedItemForDetail(null)} className="sm:hidden absolute top-6 right-6 z-20 glass w-10 h-10 rounded-full flex items-center justify-center">
+                            <button onClick={() => { setSelectedItemForDetail(null); setIsImageZoomed(false); }} className="sm:hidden absolute top-6 right-6 z-20 glass w-10 h-10 rounded-full flex items-center justify-center">
                                 <X size={20} />
                             </button>
 
-                            <div className="h-2/5 sm:h-80 w-full overflow-hidden relative">
-                                <img src={selectedItemForDetail.image} alt="" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+                            <div
+                                className="h-[45dvh] md:h-full md:w-[45%] w-full overflow-hidden relative group shrink-0 bg-[#0a0a0a] flex items-center justify-center p-4 cursor-zoom-in"
+                                onClick={() => setIsImageZoomed(true)}
+                            >
+                                <img
+                                    src={selectedItemForDetail.image}
+                                    alt=""
+                                    className="w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
+                                />
+                                {/* Clean Overlay - No heavy bottom gradient */}
+                                <div className="absolute inset-0 bg-black/5" />
+
+                                {/* Zoom Indicator */}
+                                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 backdrop-blur-md p-3 rounded-full border border-white/10">
+                                    <Search size={20} className="text-white" />
+                                </div>
+
+                                <div className="absolute top-8 left-8 right-8 flex flex-col gap-2 md:top-12 md:left-12">
+                                    <h2 className="text-3xl sm:text-5xl md:text-5xl font-black gold-gradient-text tracking-tighter drop-shadow-[0_4px_30px_rgba(0,0,0,1)] leading-tight">
+                                        {selectedItemForDetail.names[i18n.language?.split('-')[0]] || selectedItemForDetail.names['ko'] || selectedItemForDetail.names['en']}
+                                    </h2>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl sm:text-2xl font-black font-outfit text-white drop-shadow-[0_4px_20px_rgba(0,0,0,1)] bg-primary/80 px-4 py-1 rounded-full backdrop-blur-md border border-white/10">
+                                            ${selectedItemForDetail.price.toLocaleString()}
+                                        </span>
+                                        {selectedItemForDetail.popular && (
+                                            <span className="text-[10px] font-black bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full uppercase tracking-widest backdrop-blur-md">
+                                                Best Seller
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="flex-1 p-8 sm:p-12 -mt-10 relative z-10 bg-card rounded-t-[3rem] sm:rounded-none flex flex-col">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-3xl sm:text-4xl font-bold mb-2 gold-gradient-text leading-tight">
-                                            {selectedItemForDetail.names[i18n.language] || selectedItemForDetail.names['ko']}
-                                        </h2>
-                                        <p className="text-sm opacity-60 italic">{selectedItemForDetail.names.en}</p>
+                            <div className="flex-1 p-6 md:p-12 relative z-10 bg-card md:bg-card sm:rounded-none flex flex-col overflow-hidden shadow-none md:shadow-none">
+                                <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-[1px] bg-primary/30" />
+                                        <p className="text-primary/60 text-[10px] uppercase font-black tracking-[0.4em] font-outfit">Menu Narrative</p>
                                     </div>
-                                    <span className="text-2xl font-bold font-outfit text-primary">
-                                        ${selectedItemForDetail.price.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                                    </span>
+                                    <h3 className="text-xl sm:text-2xl font-bold platinum-text mb-4 opacity-10">
+                                        {selectedItemForDetail.names[i18n.language?.split('-')[0]] || selectedItemForDetail.names['ko']}
+                                    </h3>
+                                    <div className="relative">
+                                        <p className="text-xl sm:text-3xl leading-relaxed text-platinum opacity-100 whitespace-pre-wrap font-bold font-serif italic border-l-4 border-primary/40 pl-8 py-4">
+                                            "{selectedItemForDetail.descriptions[i18n.language?.split('-')[0]] || selectedItemForDetail.descriptions['ko'] || selectedItemForDetail.descriptions['en']}"
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto mb-6 pr-2">
-                                    <p className="text-lg leading-relaxed opacity-80 whitespace-pre-wrap">
-                                        {selectedItemForDetail.descriptions[i18n.language] || selectedItemForDetail.descriptions['ko']}
-                                    </p>
-                                </div>
+                                <div className="flex flex-row gap-3 mt-auto items-center justify-center">
+                                    <button
+                                        onClick={() => { setSelectedItemForDetail(null); setIsImageZoomed(false); }}
+                                        className="flex-[2] bg-primary text-primary-foreground h-14 sm:h-16 rounded-2xl font-black text-sm sm:text-lg shadow-2xl active:scale-95 transition-all uppercase tracking-widest max-w-[200px] md:max-w-[280px]"
+                                    >
+                                        확인 및 닫기
+                                    </button>
 
-                                <button
-                                    onClick={() => {
-                                        setSelectedCategory('all');
-                                        setSelectedItemForDetail(null);
-                                    }}
-                                    className="self-center px-8 py-2.5 rounded-full border border-primary/30 bg-primary/5 text-[10px] font-bold text-primary mb-8 hover:bg-primary/10 transition-all uppercase tracking-widest"
-                                >
-                                    전메뉴로가기
-                                </button>
-
-                                <div className="flex flex-col gap-6 mt-auto">
-                                    <div className="flex items-center justify-between bg-white/5 p-6 rounded-[2.5rem] border border-white/5">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] opacity-40 uppercase font-extrabold tracking-widest mb-1">수량 선택</span>
-                                            <span className="text-sm font-bold opacity-80">주문할 갯수를 선택하세요</span>
-                                        </div>
-                                        <div className="flex items-center gap-6">
+                                    <div className="flex-[1.5] flex items-center justify-between bg-white/5 px-4 rounded-2xl border border-white/5 h-14 sm:h-16 max-w-[140px] sm:max-w-[180px] md:max-w-[220px]">
+                                        <div className="flex items-center gap-2 sm:gap-4 w-full justify-between">
                                             <button
                                                 onClick={() => decreaseQuantity(selectedItemForDetail.id)}
-                                                className="w-14 h-14 rounded-2xl bg-secondary hover:bg-white/10 flex items-center justify-center text-2xl font-bold transition-all active:scale-90"
+                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-secondary hover:bg-white/10 flex items-center justify-center text-lg font-bold transition-all active:scale-90"
                                             >
                                                 -
                                             </button>
-                                            <span className="text-2xl font-bold font-outfit w-8 text-center">
+                                            <span className="text-lg font-bold font-outfit w-4 text-center">
                                                 {getItemQuantity(selectedItemForDetail.id)}
                                             </span>
                                             <button
                                                 onClick={() => addToCart(selectedItemForDetail)}
-                                                className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold shadow-lg active:scale-90 transition-all font-outfit"
+                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-lg active:scale-90 transition-all font-outfit"
                                             >
                                                 +
                                             </button>
                                         </div>
                                     </div>
-
-                                    <button
-                                        onClick={() => setSelectedItemForDetail(null)}
-                                        className="w-full bg-primary text-primary-foreground py-5 rounded-[2rem] font-bold text-xl shadow-2xl active:scale-95 transition-all"
-                                    >
-                                        확인 및 닫기
-                                    </button>
                                 </div>
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Bill Receipt Modal */}
+            <AnimatePresence>
+                {showBillModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[210] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+                            className="bg-white text-black w-full max-w-sm rounded-[2rem] p-8 shadow-2xl relative overflow-hidden font-mono"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+                            <button onClick={() => setShowBillModal(false)} className="absolute top-4 right-4 text-black/20 hover:text-black transition-colors">
+                                <X size={24} />
+                            </button>
+
+                            <div className="text-center mb-8 pt-4">
+                                <h2 className="text-xl font-black uppercase tracking-tighter mb-1">DAE JANG GEUM</h2>
+                                <p className="text-[10px] opacity-60">Smart QR Order Receipt</p>
+                                <div className="mt-4 flex justify-between text-[10px] border-y border-black/5 py-2 uppercase tracking-tighter">
+                                    <span>TABLE {tableId}</span>
+                                    <span>{new Date().toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[30vh] overflow-y-auto space-y-4 mb-8 pr-2 custom-scrollbar-light">
+                                {cart.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-start text-xs">
+                                        <div className="flex-1 pr-4">
+                                            <p className="font-bold">{item.names[i18n.language] || item.names['en']}</p>
+                                            <p className="opacity-40 text-[9px]">${item.price.toLocaleString()} x {item.quantity}</p>
+                                        </div>
+                                        <p className="font-bold">${(item.price * item.quantity).toLocaleString()}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="border-t-2 border-dashed border-black/10 pt-6 mb-8">
+                                <div className="flex justify-between items-center text-lg font-black">
+                                    <span>TOTAL</span>
+                                    <span className="text-primary">${cartTotal.toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-[10px] opacity-40 mb-6 font-sans italic">Thank you for dining with us!</p>
+                                <button
+                                    onClick={() => {
+                                        if (!isPaying) handleRequestPayment();
+                                        setShowBillModal(false);
+                                    }}
+                                    className="w-full bg-black text-white py-4 rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+                                >
+                                    {isPaying ? 'CLOSE' : 'REQUEST PAYMENT'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(212, 175, 55, 0.3);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar-light::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar-light::-webkit-scrollbar-thumb {
+                    background: rgba(0, 0, 0, 0.1);
+                    border-radius: 10px;
+                }
+            `}</style>
 
             {/* Security Overlay */}
             {isOutOfRange && (

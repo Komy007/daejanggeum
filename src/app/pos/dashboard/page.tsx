@@ -9,36 +9,77 @@ export default function PosDashboard() {
     const [requests, setRequests] = useState<PaymentRequest[]>([]);
     const [lastNotification, setLastNotification] = useState<string | null>(null);
 
-    const loadRequests = () => {
-        const data = JSON.parse(localStorage.getItem('payment_requests') || '[]');
-        setRequests(data);
+    const loadRequests = async () => {
+        try {
+            const res = await fetch('/api/pos/requests');
+            if (res.ok) {
+                const data = await res.json();
+                setRequests(data);
+            }
+        } catch (error) {
+            console.error('Failed to load POS requests:', error);
+        }
     };
 
     useEffect(() => {
         loadRequests();
-        window.addEventListener('storage', loadRequests);
-        return () => window.removeEventListener('storage', loadRequests);
+        const interval = setInterval(loadRequests, 2000); // 2s polling
+        return () => clearInterval(interval);
     }, []);
 
-    const handlePrint = (tableId: string) => {
-        printBillAtCounter(tableId);
-        setLastNotification(`Table ${tableId}의 계산서를 출력했습니다.`);
-        setTimeout(() => setLastNotification(null), 3000);
+    const handlePrint = async (tableId: string) => {
+        const success = await printBillAtCounter(tableId);
+        if (success) {
+            setLastNotification(`Table ${tableId}의 계산서를 출력했습니다.`);
+            setTimeout(() => setLastNotification(null), 3000);
+            loadRequests();
+        }
     };
 
-    const handleComplete = (tableId: string) => {
-        // POS 목록에서 제거
+    const handleComplete = async (tableId: string) => {
+        const request = requests.find(r => r.tableId === tableId);
+        if (request && request.totalAmount) {
+            try {
+                // Get current stats from server
+                const statsRes = await fetch('/api/admin/stats');
+                const stats = await statsRes.json();
+
+                // Update revenue and order count
+                await fetch('/api/admin/stats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        total_revenue: stats.total_revenue + request.totalAmount,
+                        order_count: stats.order_count + 1
+                    })
+                });
+            } catch (e) {
+                console.error('Failed to update admin stats:', e);
+            }
+        }
+
+        // POS 목록에서 제거 (API를 통해)
         const fresh = requests.filter(r => r.tableId !== tableId);
-        localStorage.setItem('payment_requests', JSON.stringify(fresh));
+        try {
+            await fetch('/api/pos/requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fresh)
+            });
+        } catch (e) {
+            console.error('Failed to update POS requests:', e);
+        }
 
-        // 테이블 상태 완전 초기화 (손님 화면 리셋 트리거)
-        localStorage.removeItem(`cart_table_${tableId}`);
-        localStorage.removeItem(`staff_call_table_${tableId}`);
-        localStorage.removeItem(`order_submitted_table_${tableId}`);
-        localStorage.removeItem(`payment_requested_table_${tableId}`);
-
-        // 스토리지 이벤트 수동 발생 (동일 브라우저 내 다른 탭 대응)
-        window.dispatchEvent(new Event('storage'));
+        // 테이블 상태 완전 초기화 (API를 통해 서버 상태 초기화)
+        try {
+            await fetch(`/api/table/${tableId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart: [], staffCalled: false, orderSubmitted: false, isPaying: false })
+            });
+        } catch (e) {
+            console.error('Failed to reset table state:', e);
+        }
 
         loadRequests();
     };
@@ -75,7 +116,7 @@ export default function PosDashboard() {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className={`glass rounded-3xl p-6 border-l-4 ${request.status === 'pending' ? 'border-l-accent' : 'border-l-primary'
+                            className={`glass rounded-3xl p-6 border-l-4 overflow-hidden relative ${request.status === 'pending' ? 'border-l-accent' : 'border-l-primary'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-6">
@@ -97,6 +138,25 @@ export default function PosDashboard() {
                             </div>
 
                             <div className="space-y-4">
+                                {/* Order Details Preview */}
+                                {request.items && request.items.length > 0 && (
+                                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                                        <p className="text-[10px] uppercase font-bold opacity-30 tracking-widest">Order Details</p>
+                                        <div className="max-h-[120px] overflow-y-auto space-y-1.5 pr-2">
+                                            {request.items.map((item, i) => (
+                                                <div key={i} className="flex justify-between text-xs">
+                                                    <span className="opacity-70">{item.name} x{item.quantity}</span>
+                                                    <span className="font-medium">${(item.price * item.quantity).toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-2 border-t border-white/5 flex justify-between items-center">
+                                            <span className="text-[10px] font-bold opacity-30">TOTAL</span>
+                                            <span className="text-primary font-black">${request.totalAmount?.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <p className="text-xs opacity-50 mb-1">Status</p>
                                     <p className="text-sm font-medium">

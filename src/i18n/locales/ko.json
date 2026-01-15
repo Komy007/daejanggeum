@@ -8,7 +8,7 @@
   "order_status": {
     "title": "디지털 메뉴판",
     "add_to_cart": "주문 담기",
-    "staff_call": "종업원호출",
+    "staff_call": "직원호출",
     "cancel_call": "호출 취소",
     "remove": "삭제",
     "empty_cart": "장바구니 비우기",

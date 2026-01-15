@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { triggerPosNotification } from '@/lib/notifications';
 
 /**
  * SaaS 실시간 테이블 동기화 훅 (Shared State Simulation)
+ * Ref-First 접근 방식을 사용하여 수량 조절 등 빠른 상태 변화를 안정적으로 처리합니다.
  */
 export function useTableSync(tableId: string) {
     const [cart, setCart] = useState<any[]>([]);
@@ -11,122 +13,154 @@ export function useTableSync(tableId: string) {
     const [orderSubmitted, setOrderSubmitted] = useState(false);
     const [isPaying, setIsPaying] = useState(false);
 
-    // 로컬 스토리지 키 생성
-    const cartKey = `cart_table_${tableId}`;
-    const staffCallKey = `staff_call_table_${tableId}`;
-    const orderSubmittedKey = `order_submitted_table_${tableId}`;
-    const paymentRequestedKey = `payment_requested_table_${tableId}`;
+    // Refs as the "True Source" for sync and rapid updates
+    const cartRef = useRef<any[]>([]);
+    const staffRef = useRef(false);
+    const orderRef = useRef(false);
+    const payingRef = useRef(false);
+    const lastUpdateTimestamp = useRef(0);
 
-    // 데이터 로드
-    const loadState = useCallback(() => {
-        const savedCart = JSON.parse(localStorage.getItem(cartKey) || '[]');
-        const isStaffCalled = localStorage.getItem(staffCallKey) === 'true';
-        const isSubmitted = localStorage.getItem(orderSubmittedKey) === 'true';
-        const isPaymentRequested = localStorage.getItem(paymentRequestedKey) === 'true';
-        setCart(savedCart);
-        setStaffCalled(isStaffCalled);
-        setOrderSubmitted(isSubmitted);
-        setIsPaying(isPaymentRequested);
-    }, [cartKey, staffCallKey, orderSubmittedKey, paymentRequestedKey]);
+    // Initial load and Polling
+    const loadStateFromServer = useCallback(async () => {
+        if (!tableId || tableId === 'undefined') return;
+
+        // Shield: Local updates take priority for 3 seconds
+        if (Date.now() - lastUpdateTimestamp.current < 3000) return;
+
+        try {
+            const res = await fetch(`/api/table/${tableId}`);
+            if (res.ok) {
+                const data = await res.json();
+
+                // Only update if state actually changed or we are idling
+                setCart(data.cart || []);
+                setStaffCalled(data.staffCalled || false);
+                setOrderSubmitted(data.orderSubmitted || false);
+                setIsPaying(data.isPaying || false);
+
+                // Keep refs in sync with server data while idling
+                cartRef.current = data.cart || [];
+                staffRef.current = data.staffCalled || false;
+                orderRef.current = data.orderSubmitted || false;
+                payingRef.current = data.isPaying || false;
+            }
+        } catch (error) {
+            console.error('Failed to sync with server:', error);
+        }
+    }, [tableId]);
+
+    const saveToServer = useCallback(async () => {
+        if (!tableId || tableId === 'undefined') return;
+
+        lastUpdateTimestamp.current = Date.now();
+        const newState = {
+            cart: cartRef.current,
+            staffCalled: staffRef.current,
+            orderSubmitted: orderRef.current,
+            isPaying: payingRef.current
+        };
+
+        try {
+            await fetch(`/api/table/${tableId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newState)
+            });
+        } catch (error) {
+            console.error('Failed to save to server:', error);
+        }
+    }, [tableId]);
 
     useEffect(() => {
-        loadState();
-        // 다른 탭/창에서의 변경 감지 (실시간 동기화 시뮬레이션)
-        window.addEventListener('storage', (e) => {
-            if (e.key === cartKey || e.key === staffCallKey || e.key === orderSubmittedKey || e.key === paymentRequestedKey) {
-                loadState();
-            }
-        });
-        return () => window.removeEventListener('storage', loadState);
-    }, [loadState, cartKey, staffCallKey, orderSubmittedKey, paymentRequestedKey]);
+        loadStateFromServer();
+        const interval = setInterval(loadStateFromServer, 1500);
+        return () => clearInterval(interval);
+    }, [loadStateFromServer]);
 
-    // 장바구니 업데이트 (같은 테이블 공유)
-    const updateCart = (newCart: any[]) => {
-        if (orderSubmitted) return; // 주문 후 수정 불가
-        localStorage.setItem(cartKey, JSON.stringify(newCart));
-        setCart(newCart);
-        window.dispatchEvent(new Event('storage'));
+    // Local Logic - Unified Update Handler
+    const updateLocalStateAndSave = (nextCart: any[]) => {
+        setCart(nextCart);
+        cartRef.current = nextCart;
+        saveToServer();
+    };
+
+    const addToCart = (item: any) => {
+        // We remove 'orderSubmitted' block to prevent "locked" state bugs during dev/testing
+        const existing = cartRef.current.find(c => c.id === item.id);
+        const next = existing
+            ? cartRef.current.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
+            : [...cartRef.current, { ...item, quantity: 1 }];
+        updateLocalStateAndSave(next);
+    };
+
+    const decreaseQuantity = (itemId: string) => {
+        const existing = cartRef.current.find(c => c.id === itemId);
+        if (!existing) return;
+
+        let next;
+        if (existing.quantity > 1) {
+            next = cartRef.current.map(c => c.id === itemId ? { ...c, quantity: c.quantity - 1 } : c);
+        } else {
+            next = cartRef.current.filter(c => c.id !== itemId);
+        }
+        updateLocalStateAndSave(next);
+    };
+
+    const removeFromCart = (itemId: string) => {
+        const next = cartRef.current.filter(c => c.id !== itemId);
+        updateLocalStateAndSave(next);
+    };
+
+    const clearCart = () => {
+        updateLocalStateAndSave([]);
+    };
+
+    const callStaff = () => {
+        setStaffCalled(true);
+        staffRef.current = true;
+        saveToServer();
+    };
+
+    const cancelStaffCall = () => {
+        setStaffCalled(false);
+        staffRef.current = false;
+        saveToServer();
     };
 
     const markOrderAsSubmitted = () => {
-        localStorage.setItem(orderSubmittedKey, 'true');
         setOrderSubmitted(true);
-        window.dispatchEvent(new Event('storage'));
+        orderRef.current = true;
+        saveToServer();
     };
 
-    const requestPayment = () => {
-        localStorage.setItem(paymentRequestedKey, 'true');
+    const requestPayment = async (items?: any[], totalAmount?: number) => {
         setIsPaying(true);
-        window.dispatchEvent(new Event('storage'));
+        payingRef.current = true;
+        saveToServer();
+        await triggerPosNotification(tableId as string, items, totalAmount);
     };
 
     const cancelPaymentRequest = () => {
-        localStorage.setItem(paymentRequestedKey, 'false');
         setIsPaying(false);
-        window.dispatchEvent(new Event('storage'));
+        payingRef.current = false;
+        saveToServer();
     };
 
     const resetTable = () => {
-        localStorage.removeItem(cartKey);
-        localStorage.removeItem(staffCallKey);
-        localStorage.removeItem(orderSubmittedKey);
-        localStorage.removeItem(paymentRequestedKey);
         setCart([]);
         setStaffCalled(false);
         setOrderSubmitted(false);
         setIsPaying(false);
-        window.dispatchEvent(new Event('storage'));
-    };
-
-    const decreaseQuantity = (itemId: string) => {
-        if (orderSubmitted) return;
-        const existing = cart.find(c => c.id === itemId);
-        if (existing) {
-            if (existing.quantity > 1) {
-                updateCart(cart.map(c => c.id === itemId ? { ...c, quantity: c.quantity - 1 } : c));
-            } else {
-                removeFromCart(itemId);
-            }
-        }
-    };
-
-    const removeFromCart = (itemId: string) => {
-        if (orderSubmitted) return;
-        updateCart(cart.filter(c => c.id !== itemId));
-    };
-
-    const clearCart = () => {
-        if (orderSubmitted) return;
-        updateCart([]);
-    };
-
-    // 직원 호출
-    const callStaff = () => {
-        localStorage.setItem(staffCallKey, 'true');
-        setStaffCalled(true);
-        window.dispatchEvent(new Event('storage'));
-
-        const calls = JSON.parse(localStorage.getItem('pos_staff_calls') || '[]');
-        if (!calls.includes(tableId)) {
-            calls.push(tableId);
-            localStorage.setItem('pos_staff_calls', JSON.stringify(calls));
-        }
-    };
-
-    // 호출 취소
-    const cancelStaffCall = () => {
-        localStorage.setItem(staffCallKey, 'false');
-        setStaffCalled(false);
-        window.dispatchEvent(new Event('storage'));
-
-        const calls = JSON.parse(localStorage.getItem('pos_staff_calls') || '[]');
-        const filtered = calls.filter((id: string) => id !== tableId);
-        localStorage.setItem('pos_staff_calls', JSON.stringify(filtered));
+        cartRef.current = [];
+        staffRef.current = false;
+        orderRef.current = false;
+        payingRef.current = false;
+        saveToServer();
     };
 
     return {
         cart,
-        updateCart,
+        addToCart,
         decreaseQuantity,
         removeFromCart,
         clearCart,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Users,
@@ -15,12 +15,36 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-    const stats = [
+    const [stats, setStats] = useState([
         { label: '오늘 총 매출', value: '$4,250', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
         { label: '신규 회원', value: '12명', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
         { label: '주문 건수', value: '84건', icon: ShoppingBag, color: 'text-orange-500', bg: 'bg-orange-500/10' },
         { label: '서빙 만족도', value: '98%', icon: BarChart3, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    ];
+    ]);
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const res = await fetch('/api/admin/stats');
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats(prev => prev.map(s => {
+                        if (s.label === '오늘 총 매출') return { ...s, value: `$${data.total_revenue.toLocaleString()}` };
+                        if (s.label === '신규 회원') return { ...s, value: `${data.new_members}명` };
+                        if (s.label === '주문 건수') return { ...s, value: `${data.order_count}건` };
+                        if (s.label === '서빙 만족도') return { ...s, value: `${data.satisfaction}%` };
+                        return s;
+                    }));
+                }
+            } catch (e) {
+                console.error('Failed to fetch stats:', e);
+            }
+        };
+
+        loadStats();
+        const interval = setInterval(loadStats, 3000); // 3s polling
+        return () => clearInterval(interval);
+    }, []);
 
     const alerts = [
         { time: '방금 전', message: '테이블 4번: 결제 요청이 승인되었습니다.', type: 'payment' },

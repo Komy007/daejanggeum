@@ -11,9 +11,9 @@ if (!fs.existsSync(DATA_DIR)) {
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { tableId: string } }
+    { params }: { params: Promise<{ tableId: string }> }
 ) {
-    const { tableId } = params;
+    const { tableId } = await params;
     const filePath = path.join(DATA_DIR, `${tableId}.json`);
 
     try {
@@ -29,9 +29,9 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { tableId: string } }
+    { params }: { params: Promise<{ tableId: string }> }
 ) {
-    const { tableId } = params;
+    const { tableId } = await params;
     const filePath = path.join(DATA_DIR, `${tableId}.json`);
 
     try {

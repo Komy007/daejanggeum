@@ -160,6 +160,7 @@ export function useTableSync(tableId: string) {
 
     return {
         cart,
+        updateCart: updateLocalStateAndSave,
         addToCart,
         decreaseQuantity,
         removeFromCart,

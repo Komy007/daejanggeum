@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Utensils, Info, MapPin, Wifi, Star, X, Bell, User, DollarSign, Search } from 'lucide-react';
 import { CATEGORIES, MENU_ITEMS, STORE_INFO } from '@/lib/constants';
 import { validateGeofencing } from '@/lib/security';
-import { triggerPosNotification } from '@/lib/notifications';
+import { triggerPosNotification, removePosNotification } from '@/lib/notifications';
 import { useTableSync } from '@/hooks/useTableSync';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -139,7 +139,6 @@ export default function OrderPage() {
                                 <button
                                     onClick={() => {
                                         cancelPaymentRequest();
-                                        const { removePosNotification } = require('@/lib/notifications');
                                         removePosNotification(tableId as string);
                                     }}
                                     className="mt-4 px-8 py-3 rounded-full border border-white/10 text-white/40 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all"

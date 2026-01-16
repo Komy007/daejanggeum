@@ -30,43 +30,19 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 
 /**
  * 사용자가 매장 반경 내에 있는지 확인합니다.
+ * 사용자의 요청으로 현재는 항상 true를 반환하며, 향후 배달 서비스 개발 시 활성화 예정입니다.
  */
 export const validateGeofencing = async (): Promise<boolean> => {
-    // 개발 모드나 로컬 테스트 중에는 보안 검사를 통과시킵니다.
+    // 2026-01-16: 사용자의 요청으로 접속 시 위치 확인 팝업 제거
+    // 향후 배달 서비스(Home Delivery)에서만 위치 정보가 필요하므로, 현재는 센서 호출 없이 통과시킵니다.
+    return true;
+
+    /* (향후 배달용으로 보존할 로직)
     if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: Geofencing bypassed.');
         return true;
     }
-
-    return new Promise((resolve) => {
-        if (!navigator.geolocation) {
-            console.warn('Geolocation is not supported by this browser.');
-            resolve(false);
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const distance = calculateDistance(
-                    position.coords.latitude,
-                    position.coords.longitude,
-                    STORE_LOCATION.lat,
-                    STORE_LOCATION.lng
-                );
-                resolve(distance <= MAX_RADIUS_METERS);
-            },
-            (error) => {
-                // HTTP 접속이나 권한 거부 시 발생합니다. console.error 대신 warn을 사용하여 화면 멈춤을 방지합니다.
-                console.warn('Location access skipped or failed:', error.message);
-                resolve(true); // 테스트 편의를 위해 에러 시에도 일단 통과 (운영 시 false로 변경 권장)
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            }
-        );
-    });
+    ...
+    */
 };
 
 /**

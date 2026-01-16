@@ -66,11 +66,12 @@ export default function OrderPage() {
     ];
 
     useEffect(() => {
-        const checkSecurity = async () => {
-            const isValid = await validateGeofencing();
-            if (!isValid) console.warn('Geofencing validation failed');
-        };
-        checkSecurity();
+        // Security check deactivated as per user request (moved to future delivery flow)
+        // const checkSecurity = async () => {
+        //     const isValid = await validateGeofencing();
+        //     if (!isValid) console.warn('Geofencing validation failed');
+        // };
+        // checkSecurity();
 
         // CRM 환영 메시지 시뮬레이션 (보류)
         // const isReturning = localStorage.getItem('is_member') === 'true';
